@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login System</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family: Arial, sans-serif;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    overflow:hidden;
+
+    /* PURPLE BACKGROUND LIKE IMAGE */
+    background: linear-gradient(135deg, #6a0dad, #9b30ff, #4b0082, #7b2fff);
+    position:relative;
+}
+
+/* EXTRA GLOW EFFECT */
+body::before{
+    content:"";
+    position:absolute;
+    width:500px;
+    height:500px;
+    background:rgba(255,255,255,0.08);
+    border-radius:50%;
+    top:-150px;
+    left:-150px;
+    filter:blur(40px);
+}
+
+body::after{
+    content:"";
+    position:absolute;
+    width:400px;
+    height:400px;
+    background:rgba(255,255,255,0.05);
+    border-radius:50%;
+    bottom:-120px;
+    right:-120px;
+    filter:blur(40px);
+}
+
+/* NOTIFICATION */
+#notification{
+    position:fixed;
+    top:20px;
+    right:20px;
+    min-width:280px;
+    padding:14px 18px;
+    border-radius:12px;
+    color:white;
+    font-weight:bold;
+    font-size:14px;
+    display:none;
+    z-index:999;
+
+    background:linear-gradient(135deg,#7c3aed,#9333ea);
+    box-shadow:0 8px 20px rgba(0,0,0,0.3);
+    animation:slideIn 0.4s ease;
+}
+#notification.locked{
+    background:linear-gradient(135deg,#ff4d6d,#c9184a);
+}
+@keyframes slideIn{
+    from{
+        transform:translateX(100%);
+        opacity:0;
+    }
+    to{
+        transform:translateX(0);
+        opacity:1;
+    }
+}
+/* LOGIN BOX */
+.login-box,
+#welcome-screen{
+    width:340px;
+    padding:35px 25px;
+    border-radius:20px;
+    background:rgba(255,255,255,0.12);
+    backdrop-filter:blur(18px);
+    border:1px solid rgba(255,255,255,0.2);
+    box-shadow:0 8px 32px rgba(0,0,0,0.3);
+    text-align:center;
+    color:white;
+}
+
+.login-box h1{
+    margin-bottom:25px;
+    font-size:26px;
+    font-weight:bold;
+}
+/* INPUTS */
+input{
+    width:100%;
+    padding:13px;
+    margin:10px 0;
+    border:none;
+    outline:none;
+    border-radius:10px;
+    background:rgba(255,255,255,0.15);
+    color:white;
+    font-size:14px;
+}
+input::placeholder{
+    color:#ddd;
+}
+/* BUTTONS */
+button{
+    width:100%;
+    padding:13px;
+    margin-top:15px;
+    border:none;
+    border-radius:10px;
+    background:linear-gradient(135deg,#a855f7,#7c3aed);
+    color:white;
+    font-size:15px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.3s;
+}
+button:hover:not(:disabled){
+    transform:translateY(-2px);
+    box-shadow:0 8px 18px rgba(168,85,247,0.4);
+}
+button:disabled{
+    opacity:0.5;
+    cursor:not-allowed;
+}
+/* WELCOME SCREEN */
+#welcome-screen{
+    display:none;
+}
+#welcome-text{
+    font-size:24px;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+#welcome-sub{
+    font-size:14px;
+    color:#e9d5ff;
+    margin-bottom:25px;
+}
+/* LOGOUT BUTTON */
+#logout-btn{
+    background:linear-gradient(135deg,#9333ea,#6d28d9);
+}
+#logout-btn:hover{
+    box-shadow:0 8px 18px rgba(147,51,234,0.4);
+}
+</style>
+</head>
+<body>
+<!-- NOTIFICATION -->
+<div id="notification"></div>
+
+<!-- LOGIN BOX -->
+<div class="login-box" id="login-box">
+    <h1>Student Login Portal</h1>
+    <input type="text" id="username" placeholder="Enter Username">
+    <input type="password" id="password" placeholder="Enter Password">
+    <button onclick="login()">LOGIN</button>
+</div>
+
+<!-- WELCOME SCREEN -->
+<div id="welcome-screen">
+    <p id="welcome-text"></p>
+    <button id="logout-btn" onclick="logout()">LOGOUT</button>
+</div>
+<script>
+// LOGIN ATTEMPTS
+var attempts = 0;
+var notifTimer;
+function showNotification(msg, isLocked = false){
+    var notif = document.getElementById("notification");
+    notif.innerHTML = msg;
+    notif.className = isLocked ? "locked" : "";
+    notif.style.display = "block";
+    clearTimeout(notifTimer);
+
+    // AUTO HIDE
+    if(!isLocked){
+        notifTimer = setTimeout(function(){
+            notif.style.display = "none";
+        },3000);
+    }
+}
+
+function login(){
+    var user = document.getElementById("username").value;
+    var pass = document.getElementById("password").value;
+
+    // 3 Different Users
+    var correctUser = "Mary Angel";
+    var correctPass = "2005";
+    var student1User = "Student1";
+    var student1Pass = "1111";
+    var student2User = "Student2";
+    var student2Pass = "2222";
+
+    if(
+        (user == correctUser && pass == correctPass) ||
+        (user == student1User && pass == student1Pass) ||
+        (user == student2User && pass == student2Pass)
+    ){
+        attempts = 0;
+        document.getElementById("login-box").style.display = "none";
+        document.getElementById("welcome-screen").style.display = "block";
+        document.getElementById("welcome-text").innerHTML =
+        "Welcome, " + user + "!";
+        // SUCCESS NOTIFICATION
+        showNotification("You have successfully logged in!");
+
+    }else{
+        attempts++;
+        if(attempts >= 3){
+            showNotification("Account Locked!", true);
+            document.querySelector(".login-box button").disabled = true;
+        }else{
+            showNotification(
+                "Invalid Credentials! Attempts Left: " + (3 - attempts)
+            );
+        }
+    }
+}
+
+// LOGOUT
+function logout(){
+    document.getElementById("welcome-screen").style.display = "none";
+    document.getElementById("login-box").style.display = "block";
+    document.getElementById("username").value = "";
+    document.getElementById("password").value = "";
+    document.getElementById("notification").style.display = "none";
+    document.querySelector(".login-box button").disabled = false;
+    attempts = 0;
+
+    // LOGOUT NOTIFICATION
+    showNotification("You have logged out.");
+}
+</script>
+</body>
+</html>

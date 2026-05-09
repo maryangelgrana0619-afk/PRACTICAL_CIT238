@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Student Login Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --violet-deep: #3b0764;
+      --violet-dark: #5b21b6;
+      --violet-mid: #7c3aed;
+      --violet-bright: #a855f7;
+      --violet-light: #d8b4fe;
+      --violet-pale: #f3e8ff;
+      --pink-accent: #e879f9;
+      --white: #ffffff;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--violet-deep);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── Canvas background (stars drawn via JS) ── */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── Animated gradient mesh blobs ── */
+    .blobs {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      mix-blend-mode: screen;
+      opacity: 0.35;
+    }
+    .blob-1 {
+      width: 520px; height: 520px;
+      background: radial-gradient(circle, #c026d3, #7c3aed);
+      top: -160px; left: -160px;
+      animation: blob-drift-1 12s ease-in-out infinite alternate;
+    }
+    .blob-2 {
+      width: 420px; height: 420px;
+      background: radial-gradient(circle, #06b6d4, #a855f7);
+      bottom: -120px; right: -120px;
+      animation: blob-drift-2 10s ease-in-out infinite alternate;
+    }
+    .blob-3 {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, #f0abfc, #818cf8);
+      top: 40%; left: 55%;
+      animation: blob-drift-3 14s ease-in-out infinite alternate;
+    }
+    .blob-4 {
+      width: 250px; height: 250px;
+      background: radial-gradient(circle, #e879f9, #3b82f6);
+      top: 10%; right: 10%;
+      animation: blob-drift-4 9s ease-in-out infinite alternate;
+    }
+
+    @keyframes blob-drift-1 {
+      0%   { transform: translate(0,0) scale(1) rotate(0deg); }
+      100% { transform: translate(60px, 50px) scale(1.2) rotate(30deg); }
+    }
+    @keyframes blob-drift-2 {
+      0%   { transform: translate(0,0) scale(1) rotate(0deg); }
+      100% { transform: translate(-50px, -40px) scale(1.15) rotate(-20deg); }
+    }
+    @keyframes blob-drift-3 {
+      0%   { transform: translate(0,0) scale(1); }
+      100% { transform: translate(-80px, 60px) scale(1.3); }
+    }
+    @keyframes blob-drift-4 {
+      0%   { transform: translate(0,0) scale(1); }
+      100% { transform: translate(40px, 70px) scale(0.85); }
+    }
+
+    /* ── Floating rings ── */
+    .rings {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      overflow: hidden;
+    }
+    .ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1.5px solid rgba(216, 180, 254, 0.18);
+      animation: ring-expand 6s ease-out infinite;
+      opacity: 0;
+    }
+    .ring:nth-child(1) { width: 200px; height: 200px; top: 20%; left: 10%; animation-delay: 0s; }
+    .ring:nth-child(2) { width: 150px; height: 150px; top: 65%; left: 75%; animation-delay: 2s; }
+    .ring:nth-child(3) { width: 180px; height: 180px; top: 10%; left: 60%; animation-delay: 4s; }
+    .ring:nth-child(4) { width: 120px; height: 120px; top: 80%; left: 20%; animation-delay: 1s; }
+    .ring:nth-child(5) { width: 260px; height: 260px; top: 45%; left: 40%; animation-delay: 3s; }
+
+    @keyframes ring-expand {
+      0%   { transform: scale(0.3); opacity: 0.6; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+
+    /* ── Floating sparkle dots ── */
+    .sparkles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 2;
+    }
+    .sparkle {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0;
+      animation: sparkle-pop 4s ease-in-out infinite;
+    }
+    .sparkle.star {
+      width: 4px; height: 4px;
+      background: #fff;
+      box-shadow: 0 0 6px 2px rgba(255,255,255,0.8);
+    }
+    .sparkle.orb {
+      width: 8px; height: 8px;
+      background: var(--pink-accent);
+      box-shadow: 0 0 12px 4px rgba(232, 121, 249, 0.6);
+    }
+    .sparkle:nth-child(1)  { top:  8%; left: 12%; animation-delay: 0s;    }
+    .sparkle:nth-child(2)  { top: 22%; left: 82%; animation-delay: 0.6s;  }
+    .sparkle:nth-child(3)  { top: 58%; left:  4%; animation-delay: 1.2s;  }
+    .sparkle:nth-child(4)  { top: 72%; left: 68%; animation-delay: 1.8s;  }
+    .sparkle:nth-child(5)  { top: 38%; left: 48%; animation-delay: 2.4s;  }
+    .sparkle:nth-child(6)  { top: 88%; left: 28%; animation-delay: 3.0s;  }
+    .sparkle:nth-child(7)  { top:  3%; left: 52%; animation-delay: 0.9s;  }
+    .sparkle:nth-child(8)  { top: 48%; left: 92%; animation-delay: 1.5s;  }
+    .sparkle:nth-child(9)  { top: 30%; left: 35%; animation-delay: 2.1s;  }
+    .sparkle:nth-child(10) { top: 70%; left: 50%; animation-delay: 3.6s;  }
+    .sparkle:nth-child(11) { top: 15%; left: 65%; animation-delay: 0.3s;  }
+    .sparkle:nth-child(12) { top: 55%; left: 20%; animation-delay: 2.7s;  }
+
+    @keyframes sparkle-pop {
+      0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+      40%, 60%  { opacity: 1; transform: scale(1.6) rotate(180deg); }
+    }
+
+    /* ── Shooting stars ── */
+    .shooting-stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      overflow: hidden;
+    }
+    .shoot {
+      position: absolute;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent);
+      border-radius: 2px;
+      opacity: 0;
+      animation: shoot-across 5s ease-in-out infinite;
+    }
+    .shoot:nth-child(1) { width: 120px; top: 15%; left: -140px; animation-delay: 1s;   transform: rotate(20deg); }
+    .shoot:nth-child(2) { width: 80px;  top: 40%; left: -100px; animation-delay: 3.5s; transform: rotate(15deg); }
+    .shoot:nth-child(3) { width: 100px; top: 70%; left: -120px; animation-delay: 6s;   transform: rotate(25deg); }
+
+    @keyframes shoot-across {
+      0%   { opacity: 0; transform: translateX(0) rotate(20deg); }
+      10%  { opacity: 1; }
+      80%  { opacity: 0.8; }
+      100% { opacity: 0; transform: translateX(110vw) rotate(20deg); }
+    }
+
+    @keyframes float {
+      0%   { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(40px, 30px) scale(1.15); }
+    }
+
+    /* Main card */
+    .login-card {
+      position: relative;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(216, 180, 254, 0.25);
+      border-radius: 28px;
+      padding: 44px 40px 36px;
+      width: 380px;
+      box-shadow:
+        0 8px 40px rgba(124, 58, 237, 0.45),
+        0 0 0 1px rgba(168, 85, 247, 0.15) inset;
+      animation: card-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    @keyframes card-in {
+      from { opacity: 0; transform: translateY(40px) scale(0.92); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Icon at top */
+    .portal-icon {
+      width: 68px; height: 68px;
+      background: linear-gradient(135deg, var(--violet-bright), var(--pink-accent));
+      border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 18px;
+      font-size: 32px;
+      box-shadow: 0 8px 24px rgba(168, 85, 247, 0.5);
+      animation: pulse-icon 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-icon {
+      0%, 100% { box-shadow: 0 8px 24px rgba(168, 85, 247, 0.5); transform: scale(1); }
+      50%       { box-shadow: 0 12px 36px rgba(232, 121, 249, 0.7); transform: scale(1.05); }
+    }
+
+    .portal-title {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--white);
+      letter-spacing: -0.3px;
+      margin-bottom: 4px;
+    }
+
+    .portal-subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: var(--violet-light);
+      margin-bottom: 28px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* Attempt indicator */
+    .attempts-bar {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .attempt-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: rgba(216, 180, 254, 0.3);
+      border: 1.5px solid rgba(216, 180, 254, 0.4);
+      transition: all 0.3s ease;
+    }
+    .attempt-dot.used {
+      background: #f87171;
+      border-color: #ef4444;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+    }
+    .attempt-dot.remaining {
+      background: var(--violet-bright);
+      border-color: var(--pink-accent);
+      box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
+    }
+
+    /* Input groups */
+    .input-group {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--violet-light);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 7px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 13px 16px 13px 44px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1.5px solid rgba(216, 180, 254, 0.2);
+      border-radius: 14px;
+      color: var(--white);
+      font-family: 'Nunito', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .input-group input::placeholder {
+      color: rgba(216, 180, 254, 0.4);
+      font-weight: 400;
+    }
+
+    .input-group input:focus {
+      border-color: var(--violet-bright);
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.2);
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 14px;
+      bottom: 14px;
+      font-size: 17px;
+      pointer-events: none;
+    }
+
+    /* Login button */
+    .btn-login {
+      width: 100%;
+      padding: 14px;
+      margin-top: 8px;
+      background: linear-gradient(135deg, var(--violet-mid), var(--pink-accent));
+      border: none;
+      border-radius: 14px;
+      color: var(--white);
+      font-family: 'Nunito', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: all 0.25s ease;
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-login::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.12);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .btn-login:hover:not(:disabled)::after { opacity: 1; }
+    .btn-login:active:not(:disabled) { transform: scale(0.97); }
+
+    .btn-login:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: grayscale(0.4);
+    }
+
+    /* Message */
+    #message {
+      margin-top: 18px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+      display: none;
+      animation: msg-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes msg-in {
+      from { opacity: 0; transform: scale(0.9) translateY(6px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    #message.success {
+      display: block;
+      background: rgba(74, 222, 128, 0.15);
+      border: 1.5px solid rgba(74, 222, 128, 0.4);
+      color: #86efac;
+    }
+
+    #message.error {
+      display: block;
+      background: rgba(248, 113, 113, 0.12);
+      border: 1.5px solid rgba(248, 113, 113, 0.35);
+      color: #fca5a5;
+    }
+
+    #message.locked {
+      display: block;
+      background: rgba(239, 68, 68, 0.18);
+      border: 1.5px solid rgba(239, 68, 68, 0.5);
+      color: #fca5a5;
+      font-size: 15px;
+    }
+
+    /* Attempts label */
+    .attempts-label {
+      text-align: center;
+      font-size: 12px;
+      color: rgba(216, 180, 254, 0.5);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    /* Welcome screen */
+    #welcome-screen {
+      display: none;
+      text-align: center;
+      animation: card-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    .welcome-emoji {
+      font-size: 56px;
+      animation: bounce 1s ease-in-out infinite alternate;
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to   { transform: translateY(-10px); }
+    }
+
+    .welcome-name {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--white);
+      margin-bottom: 6px;
+    }
+
+    .welcome-name span {
+      background: linear-gradient(90deg, var(--violet-light), var(--pink-accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .welcome-sub {
+      color: var(--violet-light);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* ── School header strip ── */
+    .school-header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(216, 180, 254, 0.15);
+    }
+    .school-logo {
+      font-size: 30px;
+      display: block;
+      margin-bottom: 6px;
+      animation: pulse-icon 3s ease-in-out infinite;
+    }
+    .school-name {
+      font-size: 13px;
+      font-weight: 900;
+      color: var(--white);
+      line-height: 1.4;
+      letter-spacing: 0.1px;
+    }
+    .school-campus {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--violet-light);
+      margin-top: 2px;
+    }
+    .subject-badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 12px;
+      background: linear-gradient(135deg, rgba(124,58,237,0.4), rgba(232,121,249,0.3));
+      border: 1px solid rgba(216,180,254,0.3);
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--violet-light);
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+
+    /* ── Welcome dashboard ── */
+    #welcome-screen {
+      display: none;
+      text-align: center;
+      animation: card-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    .welcome-header {
+      margin-bottom: 20px;
+    }
+    .welcome-emoji {
+      font-size: 52px;
+      animation: bounce 1s ease-in-out infinite alternate;
+      display: block;
+      margin-bottom: 10px;
+    }
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to   { transform: translateY(-10px); }
+    }
+    .welcome-name {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+    .welcome-name span {
+      background: linear-gradient(90deg, var(--violet-light), var(--pink-accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .welcome-sub {
+      color: rgba(216,180,254,0.7);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* Info cards grid */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 18px 0;
+      text-align: left;
+    }
+    .info-card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(216,180,254,0.18);
+      border-radius: 14px;
+      padding: 12px 14px;
+      transition: background 0.2s;
+    }
+    .info-card:hover { background: rgba(255,255,255,0.11); }
+    .info-card .ic-icon { font-size: 20px; display: block; margin-bottom: 6px; }
+    .info-card .ic-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(216,180,254,0.55);
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      margin-bottom: 3px;
+    }
+    .info-card .ic-value {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--white);
+      line-height: 1.3;
+    }
+    .info-card.full-width {
+      grid-column: 1 / -1;
+    }
+
+    /* Status badge */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(74, 222, 128, 0.12);
+      border: 1px solid rgba(74, 222, 128, 0.35);
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #86efac;
+      margin-bottom: 16px;
+    }
+    .status-dot {
+      width: 7px; height: 7px;
+      background: #4ade80;
+      border-radius: 50%;
+      animation: status-blink 1.5s ease-in-out infinite;
+    }
+    @keyframes status-blink {
+      0%, 100% { opacity: 1; box-shadow: 0 0 6px #4ade80; }
+      50%       { opacity: 0.4; box-shadow: none; }
+    }
+
+    .btn-logout {
+      width: 100%;
+      margin-top: 4px;
+      padding: 12px 28px;
+      background: linear-gradient(135deg, #dc2626, #f97316);
+      border: none;
+      border-radius: 12px;
+      color: var(--white);
+      font-family: 'Nunito', sans-serif;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: 0.4px;
+      transition: all 0.25s ease;
+      box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-logout::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.12);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .btn-logout:hover::after { opacity: 1; }
+    .btn-logout:active { transform: scale(0.97); }
+  </style>
+</head>
+<body>
+
+  <!-- Canvas star field -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- Glowing blobs -->
+  <div class="blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="blob blob-4"></div>
+  </div>
+
+  <!-- Expanding rings -->
+  <div class="rings">
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="ring"></div>
+  </div>
+
+  <!-- Shooting stars -->
+  <div class="shooting-stars">
+    <div class="shoot"></div>
+    <div class="shoot"></div>
+    <div class="shoot"></div>
+  </div>
+
+  <!-- Sparkle dots -->
+  <div class="sparkles">
+    <div class="sparkle star"></div>
+    <div class="sparkle orb"></div>
+    <div class="sparkle star"></div>
+    <div class="sparkle orb"></div>
+    <div class="sparkle star"></div>
+    <div class="sparkle orb"></div>
+    <div class="sparkle star"></div>
+    <div class="sparkle star"></div>
+    <div class="sparkle orb"></div>
+    <div class="sparkle star"></div>
+    <div class="sparkle orb"></div>
+    <div class="sparkle star"></div>
+  </div>
+
+  <div class="login-card">
+
+    <!-- LOGIN FORM -->
+    <div id="login-form">
+
+      <!-- School header -->
+      <div class="school-header">
+        <div class="school-name">West Visayas State University</div>
+        <div class="school-campus">Janiuay Campus</div>
+        <span class="subject-badge">CIT 238 — Mobile Application Development</span>
+      </div>
+
+      <div class="portal-icon">🎓</div>
+      <div class="portal-title">Student Login Portal</div>
+
+
+      <div class="attempts-label">Login Attempts Remaining</div>
+      <div class="attempts-bar">
+        <div class="attempt-dot remaining" id="dot1"></div>
+        <div class="attempt-dot remaining" id="dot2"></div>
+        <div class="attempt-dot remaining" id="dot3"></div>
+      </div>
+
+      <div class="input-group">
+        <label>Username</label>
+        <span class="input-icon">👤</span>
+        <input type="text" id="username" placeholder="Enter your username" autocomplete="off">
+      </div>
+
+      <div class="input-group">
+        <label>Password</label>
+        <span class="input-icon">🔒</span>
+        <input type="password" id="password" placeholder="Enter your password">
+      </div>
+
+      <button class="btn-login" id="loginBtn" onclick="login()">✨ Login</button>
+
+      <div id="message"></div>
+    </div>
+
+    <!-- WELCOME SCREEN (shown after successful login) -->
+    <div id="welcome-screen">
+
+      <div class="welcome-header">
+        <span class="welcome-emoji">🎉</span>
+        <div class="welcome-name">Welcome, <span id="welcome-username"></span>!</div>
+        <div class="welcome-sub">Login successful — you're all set.</div>
+      </div>
+
+      <div class="status-pill">
+        <span class="status-dot"></span> Session Active
+      </div>
+
+      <div class="info-grid">
+        <div class="info-card full-width">
+          <div class="ic-label">Institution</div>
+          <div class="ic-value">West Visayas State University — Janiuay Campus</div>
+        </div>
+        <div class="info-card full-width">
+          <div class="ic-label">Subject</div>
+          <div class="ic-value">CIT 238 — Mobile Application Development</div>
+        </div>
+        <div class="info-card">
+          <span class="ic-icon">👤</span>
+          <div class="ic-label">Logged in as</div>
+          <div class="ic-value" id="welcome-user-detail">—</div>
+        </div>
+        <div class="info-card">
+          <span class="ic-icon">🕐</span>
+          <div class="ic-label">Login Time</div>
+          <div class="ic-value" id="login-time">—</div>
+        </div>
+        <div class="info-card">
+          <span class="ic-icon">📅</span>
+          <div class="ic-label">Date</div>
+          <div class="ic-value" id="login-date">—</div>
+        </div>
+        <div class="info-card">
+          <span class="ic-icon">🎓</span>
+          <div class="ic-label">Semester</div>
+          <div class="ic-value">2nd Sem SY 2025–2026</div>
+        </div>
+      </div>
+
+      <button class="btn-logout" onclick="logout()">← Log Out</button>
+    </div>
+
+  </div>
+
+  <script>
+    // ── TASK 1 & TASK 2: Credentials (3 users) ──────────────────────────
+    // TASK 1: first credential uses a sample first name + birth year format
+    // TASK 2: three users total
+    var users = [
+      { username: "maryangel",    password: "2005"  },
+      { username: "student1", password: "1111"  },
+      { username: "student2", password: "2222"  }
+    ];
+
+    // ── TASK 3: Attempt tracking ─────────────────────────────────────────
+    var maxAttempts = 3;
+    var attemptsLeft = maxAttempts;
+    var isLocked = false;
+
+    function updateDots() {
+      var dots = document.querySelectorAll('.attempt-dot');
+      dots.forEach(function(dot, i) {
+        dot.classList.remove('used', 'remaining');
+        if (i < (maxAttempts - attemptsLeft)) {
+          dot.classList.add('used');
+        } else {
+          dot.classList.add('remaining');
+        }
+      });
+    }
+
+    function login() {
+      if (isLocked) return;
+
+      var user = document.getElementById("username").value.trim();
+      var pass = document.getElementById("password").value;
+      var msgEl = document.getElementById("message");
+
+      // Check against all users
+      var matched = null;
+      for (var i = 0; i < users.length; i++) {
+        if (users[i].username === user && users[i].password === pass) {
+          matched = users[i];
+          break;
+        }
+      }
+
+      if (matched) {
+        // ── TASK 5: Welcome message ──────────────────────────────────────
+        document.getElementById("login-form").style.display = "none";
+        var welcomeScreen = document.getElementById("welcome-screen");
+        welcomeScreen.style.display = "block";
+        document.getElementById("welcome-username").textContent = matched.username;
+        document.getElementById("welcome-user-detail").textContent = matched.username;
+
+        // Populate live time & date
+        var now = new Date();
+        var timeStr = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        var dateStr = now.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById("login-time").textContent = timeStr;
+        document.getElementById("login-date").textContent = dateStr;
+
+      } else {
+        // Wrong credentials
+        attemptsLeft--;
+        updateDots();
+
+        if (attemptsLeft <= 0) {
+          // ── TASK 3: Account locked ───────────────────────────────────
+          isLocked = true;
+          msgEl.className = "locked";
+          msgEl.innerHTML = "🔐 Account Locked!<br><small>Too many failed attempts.</small>";
+          document.getElementById("loginBtn").disabled = true;
+          document.getElementById("username").disabled = true;
+          document.getElementById("password").disabled = true;
+        } else {
+          msgEl.className = "error";
+          msgEl.innerHTML = "❌ Invalid Username or Password!<br><small>" + attemptsLeft + " attempt(s) remaining.</small>";
+          // Shake animation
+          var card = document.querySelector('.login-card');
+          card.style.animation = 'none';
+          setTimeout(function() { card.style.animation = ''; }, 10);
+        }
+      }
+    }
+
+    function logout() {
+      document.getElementById("welcome-screen").style.display = "none";
+      document.getElementById("login-form").style.display = "block";
+      document.getElementById("username").value = "";
+      document.getElementById("password").value = "";
+      document.getElementById("message").className = "";
+      document.getElementById("message").innerHTML = "";
+      // Reset attempts on logout
+      attemptsLeft = maxAttempts;
+      isLocked = false;
+      updateDots();
+      document.getElementById("loginBtn").disabled = false;
+      document.getElementById("username").disabled = false;
+      document.getElementById("password").disabled = false;
+    }
+
+    // Allow pressing Enter to login
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") login();
+    });
+
+    // ── Canvas star-field ────────────────────────────────────────────────
+    (function() {
+      var canvas = document.getElementById('bg-canvas');
+      var ctx = canvas.getContext('2d');
+      var stars = [];
+      var NUM_STARS = 120;
+
+      function resize() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      for (var i = 0; i < NUM_STARS; i++) {
+        stars.push({
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * window.innerHeight,
+          r: Math.random() * 1.4 + 0.2,
+          alpha: Math.random(),
+          speed: Math.random() * 0.4 + 0.1,
+          dir: Math.random() > 0.5 ? 1 : -1
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        stars.forEach(function(s) {
+          s.alpha += s.speed * 0.012 * s.dir;
+          if (s.alpha >= 1) { s.alpha = 1; s.dir = -1; }
+          if (s.alpha <= 0) { s.alpha = 0; s.dir = 1; }
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255,255,255,' + s.alpha + ')';
+          ctx.fill();
+        });
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+  </script>
+
+</body>
+</html>
