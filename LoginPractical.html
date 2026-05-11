@@ -407,6 +407,56 @@
       font-size: 15px;
     }
 
+    #message.unlocking {
+      display: block;
+      background: rgba(251, 191, 36, 0.15);
+      border: 1.5px solid rgba(251, 191, 36, 0.45);
+      color: #fde68a;
+      font-size: 15px;
+    }
+
+    /* Countdown ring */
+    .countdown-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .countdown-ring {
+      position: relative;
+      width: 42px;
+      height: 42px;
+      flex-shrink: 0;
+    }
+    .countdown-ring svg {
+      transform: rotate(-90deg);
+    }
+    .countdown-ring .track {
+      fill: none;
+      stroke: rgba(253,230,138,0.2);
+      stroke-width: 4;
+    }
+    .countdown-ring .progress {
+      fill: none;
+      stroke: #fbbf24;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 113;   /* 2π × r(18) ≈ 113 */
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 1s linear;
+    }
+    .countdown-number {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 900;
+      color: #fde68a;
+    }
+
     /* Attempts label */
     .attempts-label {
       text-align: center;
@@ -784,6 +834,74 @@
       });
     }
 
+    // ── Lockout countdown & auto-unlock ─────────────────────────────────
+    var lockoutTimer = null;
+
+    function startLockoutCountdown(seconds) {
+      var msgEl = document.getElementById("message");
+      var timeLeft = seconds;
+      var circumference = 113; // 2π × 18
+
+      function renderLocked(secs) {
+        msgEl.className = "unlocking";
+        msgEl.innerHTML =
+          '🔐 Account Locked — Too many failed attempts.' +
+          '<div class="countdown-wrap">' +
+            '<div class="countdown-ring">' +
+              '<svg width="42" height="42" viewBox="0 0 42 42">' +
+                '<circle class="track"    cx="21" cy="21" r="18"/>' +
+                '<circle class="progress" cx="21" cy="21" r="18" id="countdown-arc"/>' +
+              '</svg>' +
+              '<div class="countdown-number" id="countdown-num">' + secs + '</div>' +
+            '</div>' +
+            '<small>Unlocking in <strong id="countdown-sec">' + secs + '</strong>s…</small>' +
+          '</div>';
+      }
+
+      renderLocked(timeLeft);
+
+      lockoutTimer = setInterval(function() {
+        timeLeft--;
+
+        // Update arc
+        var arc = document.getElementById("countdown-arc");
+        var numEl = document.getElementById("countdown-num");
+        var secEl = document.getElementById("countdown-sec");
+        if (arc) {
+          var offset = circumference * (1 - timeLeft / seconds);
+          arc.style.strokeDashoffset = offset;
+        }
+        if (numEl)  numEl.textContent  = timeLeft;
+        if (secEl)  secEl.textContent  = timeLeft;
+
+        if (timeLeft <= 0) {
+          clearInterval(lockoutTimer);
+          unlockAccount();
+        }
+      }, 1000);
+    }
+
+    function unlockAccount() {
+      isLocked = false;
+      attemptsLeft = maxAttempts;
+      updateDots();
+
+      var msgEl = document.getElementById("message");
+      msgEl.className = "success";
+      msgEl.innerHTML = "🔓 Account Unlocked!<br><small>You may try again.</small>";
+
+      document.getElementById("loginBtn").disabled = false;
+      document.getElementById("username").disabled = false;
+      document.getElementById("password").disabled = false;
+      document.getElementById("username").focus();
+
+      // Clear the success message after 3 seconds
+      setTimeout(function() {
+        msgEl.className = "";
+        msgEl.innerHTML = "";
+      }, 3000);
+    }
+
     function login() {
       if (isLocked) return;
 
@@ -821,13 +939,12 @@
         updateDots();
 
         if (attemptsLeft <= 0) {
-          // ── TASK 3: Account locked ───────────────────────────────────
+          // ── TASK 3: Account locked with 30s auto-unlock ──────────────
           isLocked = true;
-          msgEl.className = "locked";
-          msgEl.innerHTML = "🔐 Account Locked!<br><small>Too many failed attempts.</small>";
           document.getElementById("loginBtn").disabled = true;
           document.getElementById("username").disabled = true;
           document.getElementById("password").disabled = true;
+          startLockoutCountdown(30);
         } else {
           msgEl.className = "error";
           msgEl.innerHTML = "❌ Invalid Username or Password!<br><small>" + attemptsLeft + " attempt(s) remaining.</small>";
@@ -840,6 +957,9 @@
     }
 
     function logout() {
+      // Clear any running lockout timer
+      if (lockoutTimer) { clearInterval(lockoutTimer); lockoutTimer = null; }
+
       document.getElementById("welcome-screen").style.display = "none";
       document.getElementById("login-form").style.display = "block";
       document.getElementById("username").value = "";
